@@ -88,17 +88,17 @@ function gclc2ggb(program) {
         }
       }
     if (!found) {
-      result = line.match( /^\s*intersec\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
+      result = line.match( /^\s*intersec(tion)*\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) {
-        output += result[1] + "=Intersect(" + result[2] + "," + result[3] + ")\n";
+        output += result[2] + "=Intersect(" + result[3] + "," + result[4] + ")\n";
         found = true;
         }
       }
     if (!found) {
-      result = line.match( /^\s*intersec2\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
+      result = line.match( /^\s*intersec(tion)*2\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) {
-        output += result[1] + "=Intersect(" + result[3] + "," + result[4] + ",1)\n";
-        output += result[2] + "=Intersect(" + result[3] + "," + result[4] + ",2)\n";
+        output += result[2] + "=Intersect(" + result[4] + "," + result[5] + ",1)\n";
+        output += result[3] + "=Intersect(" + result[4] + "," + result[5] + ",2)\n";
         found = true;
         }
       }
@@ -126,6 +126,24 @@ function gclc2ggb(program) {
         }
       }
     if (!found) {
+      result = line.match( /^\s*online\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
+      if (result != null) {
+        var obj = nextLabel();
+        output += obj + "=Line(" + result[2] + "," + result[3] + ")\n";
+        output += result[1] + "=Point(" + obj + ")\n";
+        found = true;
+        }
+      }
+    if (!found) {
+      result = line.match( /^\s*oncircle\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
+      if (result != null) {
+        var obj = nextLabel();
+        output += obj + "=Circle(" + result[2] + "," + result[3] + ")\n";
+        output += result[1] + "=Point(" + obj + ")\n";
+        found = true;
+        }
+      }
+    if (!found) {
       result = line.match( /^\s*midpoint\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) {
         output += result[1] + "=Midpoint(" + result[2] + "," + result[3] + ")\n";
@@ -140,6 +158,23 @@ function gclc2ggb(program) {
         }
       }
     if (!found) {
+      result = line.match( /^\s*drawcircle\s*([\w]+)\s*([\w]+)\s*$/ );
+      if (result != null) {
+        var obj = nextLabel();
+        output += obj + "=Circle(" + result[1] + "," + result[2] + ")\n";
+        found = true;
+        }
+      }
+    if (!found) {
+      result = line.match( /^\s*foot\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
+      if (result != null) {
+        var obj = nextLabel();
+        output += obj + "=PerpendicularLine(" + result[2] + "," + result[3] + ")\n";
+        output += result[1] + "=Intersect(" + obj + "," + result[3] + ")\n";
+        found = true;
+        }
+      }
+    if (!found) {
       result = line.match( /^\s*parallel\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) {
         output += result[1] + "=Line(" + result[2] + "," + result[3] + ")\n";
@@ -147,9 +182,9 @@ function gclc2ggb(program) {
         }
       }
     if (!found) {
-      result = line.match( /^\s*perp\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
+      result = line.match( /^\s*perp(endicular)*\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) {
-        output += result[1] + "=PerpendicularLine(" + result[2] + "," + result[3] + ")\n";
+        output += result[2] + "=PerpendicularLine(" + result[3] + "," + result[4] + ")\n";
         found = true;
         }
       }
