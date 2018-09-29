@@ -9,7 +9,7 @@ const fsClose = util.promisify(fs.close);
 var lastLabel = 0;
 
 async function GGBScript2GGBFile(filename, ggbScript) {
-  var plotter = new GGBPlotter({ggb: "remote"});
+  var plotter = new GGBPlotter({ggb: "remote", plotters: 3});
   await plotter.evalGGBScript(ggbScript);
   // this is not (yet?) working in node-geogebra:
   // await plotter.exec("setGridVisible", ["false"]);
@@ -103,6 +103,13 @@ function gclc2ggb(program) {
         }
       }
     if (!found) {
+      result = line.match( /^\s*intersec(tion)*\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
+      if (result != null) {
+        output += result[2] + "=Intersect(Line(" + result[3] + "," + result[4] + "),Line(" + result[5] + "," + result[6] + "))\n";
+        found = true;
+        }
+      }
+    if (!found) {
       result = line.match( /^\s*drawsegment\s*([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) {
         output += "Segment(" + result[1] + "," + result[2] + ")\n";
@@ -119,27 +126,21 @@ function gclc2ggb(program) {
     if (!found) {
       result = line.match( /^\s*onsegment\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) {
-        var obj = nextLabel();
-        output += obj + "=Segment(" + result[2] + "," + result[3] + ")\n";
-        output += result[1] + "=Point(" + obj + ")\n";
+        output += result[1] + "=Point(Segment(" + result[2] + "," + result[3] + "))\n";
         found = true;
         }
       }
     if (!found) {
       result = line.match( /^\s*online\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) {
-        var obj = nextLabel();
-        output += obj + "=Line(" + result[2] + "," + result[3] + ")\n";
-        output += result[1] + "=Point(" + obj + ")\n";
+        output += result[1] + "=Point(Line(" + result[2] + "," + result[3] + "))\n";
         found = true;
         }
       }
     if (!found) {
       result = line.match( /^\s*oncircle\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) {
-        var obj = nextLabel();
-        output += obj + "=Circle(" + result[2] + "," + result[3] + ")\n";
-        output += result[1] + "=Point(" + obj + ")\n";
+        output += result[1] + "=Point(Circle(" + result[2] + "," + result[3] + "))\n";
         found = true;
         }
       }
@@ -160,17 +161,14 @@ function gclc2ggb(program) {
     if (!found) {
       result = line.match( /^\s*drawcircle\s*([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) {
-        var obj = nextLabel();
-        output += obj + "=Circle(" + result[1] + "," + result[2] + ")\n";
+        output += "Circle(" + result[1] + "," + result[2] + ")\n";
         found = true;
         }
       }
     if (!found) {
       result = line.match( /^\s*foot\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) {
-        var obj = nextLabel();
-        output += obj + "=PerpendicularLine(" + result[2] + "," + result[3] + ")\n";
-        output += result[1] + "=Intersect(" + obj + "," + result[3] + ")\n";
+        output += result[1] + "=Intersect(PerpendicularLine(" + result[2] + "," + result[3] + ")," + result[3] + ")\n";
         found = true;
         }
       }
@@ -203,12 +201,45 @@ function gclc2ggb(program) {
         }
       }
     if (!found) {
+      result = line.match( /^\s*prove\s*{\s*perpendicular\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*}\s*$/ );
+      if (result != null) {
+        output += "Prove(ArePerpendicular(Line(" + result[1] + "," + result[2] + "),Line(" + result[3] + "," + result[4] + ")))\n";
+        found = true;
+        }
+      }
+    if (!found) {
+      result = line.match( /^\s*prove\s*{\s*parallel\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*}\s*$/ );
+      if (result != null) {
+        output += "Prove(AreParallel(Line(" + result[1] + "," + result[2] + "),Line(" + result[3] + "," + result[4] + ")))\n";
+        found = true;
+        }
+      }
+    if (!found) {
+      result = line.match( /^\s*prove\s*{\s*cyclic\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*}\s*$/ );
+      if (result != null) {
+        output += "Prove(AreConcyclic(" + result[1] + "," + result[2] + "," + result[3] + "," + result[4] + "))\n";
+        found = true;
+        }
+      }
+    if (!found) {
+      result = line.match( /^\s*prove\s*{\s*identical\s*([\w]+)\s*([\w]+)\s*}\s*$/ );
+      if (result != null) {
+        output += "Prove(AreEqual(" + result[1] + "," + result[2] + "))\n";
+        found = true;
+        }
+      }
+    if (!found) {
       result = line.match( /^\s*cmark_([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) // cmark_... is not yet implemented
         found = true;
       }
     if (!found) {
       result = line.match( /^\s*prover_timeout\s*(\d+\.?\d*|\.\d+)\s*$/ );
+      if (result != null) // not implemented
+        found = true;
+      }
+    if (!found) {
+      result = line.match( /^\s*dim\s*(\d+\.?\d*|\.\d+)\s*(\d+\.?\d*|\.\d+)\s*$/ );
       if (result != null) // not implemented
         found = true;
       }
