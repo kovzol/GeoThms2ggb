@@ -1,6 +1,6 @@
 var proveCommand = "Prove";
 
-const GGBPool = require("node-geogebra").GGBPool;
+const GGBPlotter = require("node-geogebra").GGBPlotter;
 
 var fs = require('fs');
 const util = require('util');
@@ -11,11 +11,8 @@ const fsClose = util.promisify(fs.close);
 var lastLabel = 0;
 
 async function GGBScript2GGBFile(filename, ggbScript) {
-  console.log(filename + ": obtaining GGBPool");
-  var pool = new GGBPool({ggb: "remote", plotters: 1});
-  await pool.ready();
-  var plotter = await pool.getGGBPlotter();
-  await plotter.reset();
+  console.log(filename + ": obtaining GGBPlotter");
+  var plotter = new GGBPlotter({ggb: "remote", plotters: 1});
   console.log(filename + ": GGBPlotter obtained");
   await plotter.evalGGBScript(['SetPerspective("AG")']);
   // await plotter.evalGGBScript(["ZoomIn(-20,0,160,120)"]);
@@ -27,8 +24,7 @@ async function GGBScript2GGBFile(filename, ggbScript) {
   console.log(filename + ": GGB script evaluated");
   var ggb = await plotter.export64("ggb");
   await plotter.release(); 
-  await pool.release();
-  console.log(filename + ": GGBPool released");
+  console.log(filename + ": GGBPlotter released");
   fileDescriptor = await fsOpen(filename, 'w');
   var ggbRaw = Buffer.from(ggb, 'base64');
   await fsWrite(fileDescriptor, ggbRaw);
