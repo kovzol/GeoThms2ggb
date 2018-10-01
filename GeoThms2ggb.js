@@ -1,7 +1,6 @@
 var proveCommand = "Prove";
 
 const GGBPool = require("node-geogebra").GGBPool;
-var pool = new GGBPool({ggb: "remote", plotters: 1});
 
 var fs = require('fs');
 const util = require('util');
@@ -12,27 +11,29 @@ const fsClose = util.promisify(fs.close);
 var lastLabel = 0;
 
 async function GGBScript2GGBFile(filename, ggbScript) {
-  console.log(filename + " is about to plot");
+  console.log(filename + ": obtaining GGBPool");
+  var pool = new GGBPool({ggb: "remote", plotters: 1});
   await pool.ready();
   var plotter = await pool.getGGBPlotter();
   await plotter.reset();
-  console.log(filename + " will be plot");
+  console.log(filename + ": GGBPlotter obtained");
   await plotter.evalGGBScript(['SetPerspective("AG")']);
-  await plotter.evalGGBScript(["ZoomIn(-20,0,160,120)"]);
-  // await plotter.evalGGBScript(["ZoomOut(10)"]);
+  // await plotter.evalGGBScript(["ZoomIn(-20,0,160,120)"]);
+  await plotter.evalGGBScript(["ZoomOut(30)"]);
   await plotter.exec("setGridVisible", [false]);
   await plotter.exec("setAxesVisible", [false, false]);
   await plotter.evalGGBScript(ggbScript, 800, 600);
   // await plotter.evalGGBScript(["SetAxesRatio(100,100)"], 800, 600);
-  console.log(filename + " plotted");
+  console.log(filename + ": GGB script evaluated");
   var ggb = await plotter.export64("ggb");
   await plotter.release(); 
-  console.log(filename + " plot released");
+  await pool.release();
+  console.log(filename + ": GGBPool released");
   fileDescriptor = await fsOpen(filename, 'w');
   var ggbRaw = Buffer.from(ggb, 'base64');
   await fsWrite(fileDescriptor, ggbRaw);
   await fsClose(fileDescriptor);
-  console.log(filename + " saved");
+  console.log(filename + ": file saved");
   }
 
 var mysql = require('mysql');
@@ -48,9 +49,6 @@ con.connect(function(err) {
   if (err) throw err;
   console.log("Connected to MySQL server");
   // proverId = 4 means that Coq was used (unsupported here)
-  var query = "select distinct teoId, code from demonstrations where proverId != 4 order by teoId;";
-  var query = "select distinct teoId, code from demonstrations where proverId != 4 and teoId = 'GEO0240' order by teoId;";
-  var query = "select distinct teoId, code from demonstrations where proverId != 4 order by teoId limit 100;";
   var query = "select distinct teoId, code from demonstrations where proverId != 4 order by teoId;";
   con.query(query, function (err, result, fields) {
     processQuery (err, result, fields);
@@ -76,7 +74,6 @@ async function processQuery (err, result, fields) {
         await GGBScript2GGBFile(filename, ggbScript.split("\n"));
         }
       }
-    pool.release();
     process.exit();
   }
 
