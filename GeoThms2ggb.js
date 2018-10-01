@@ -1,4 +1,5 @@
 var proveCommand = "Prove";
+var scaling = 30;
 
 const GGBPlotter = require("node-geogebra").GGBPlotter;
 
@@ -16,7 +17,7 @@ async function GGBScript2GGBFile(filename, ggbScript) {
   console.log(filename + ": GGBPlotter obtained");
   await plotter.evalGGBScript(['SetPerspective("AG")']);
   // await plotter.evalGGBScript(["ZoomIn(-20,0,160,120)"]);
-  await plotter.evalGGBScript(["ZoomOut(30)"]);
+  // await plotter.evalGGBScript(["ZoomOut(30)"]);
   await plotter.exec("setGridVisible", [false]);
   await plotter.exec("setAxesVisible", [false, false]);
   await plotter.evalGGBScript(ggbScript, 800, 600);
@@ -93,7 +94,7 @@ function gclc2ggb(program) {
     if (!found) {
       result = line.match( /^\s*point\s*([\w]+)\s*(\d+\.?\d*|\.\d+)\s*(\d+\.?\d*|\.\d+)\s*$/ );
       if (result != null) {
-        output += result[1] + "=(" + result[2] + "," + result[3] + ")\n";
+        output += result[1] + "=(" + (result[2]/scaling) + "," + (result[3]/scaling) + ")\n";
         found = true;
         }
       }
@@ -235,6 +236,13 @@ function gclc2ggb(program) {
       result = line.match( /^\s*prove\s*{\s*cyclic\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*}\s*$/ );
       if (result != null) {
         output += proveCommand + "(AreConcyclic(" + result[1] + "," + result[2] + "," + result[3] + "," + result[4] + "))\n";
+        found = true;
+        }
+      }
+    if (!found) {
+      result = line.match( /^\s*prove\s*{\s*equal\s*{\s*segment\s*([\w]+)\s*([\w]+)\s*}\s*{\s*segment\s*([\w]+)\s*([\w]+)\s*}\s*}\s*$/ );
+      if (result != null) {
+        output += proveCommand + "(AreCongruent(Segment(" + result[1] + "," + result[2] + "),Segment(" + result[3] + "," + result[4] + ")))\n";
         found = true;
         }
       }
