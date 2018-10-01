@@ -1,4 +1,7 @@
-const GGBPlotter = require("node-geogebra").GGBPlotter;
+var proveCommand = "Prove";
+
+const GGBPool = require("node-geogebra").GGBPool;
+var pool = new GGBPool({ggb: "remote", plotters: 1});
 
 var fs = require('fs');
 const util = require('util');
@@ -9,23 +12,27 @@ const fsClose = util.promisify(fs.close);
 var lastLabel = 0;
 
 async function GGBScript2GGBFile(filename, ggbScript) {
-  var plotter = new GGBPlotter({ggb: "remote", plotters: 3});
-  await plotter.evalGGBScript(ggbScript);
-  // this is not (yet?) working in node-geogebra:
-  // await plotter.exec("setGridVisible", ["false"]);
-  await plotter.evalGGBScript(["ZoomIn(-10,-30,120,100)"], 600, 600);
+  console.log(filename + " is about to plot");
+  await pool.ready();
+  var plotter = await pool.getGGBPlotter();
+  await plotter.reset();
+  console.log(filename + " will be plot");
+  await plotter.evalGGBScript(['SetPerspective("AG")']);
+  await plotter.evalGGBScript(["ZoomIn(-20,0,160,120)"]);
+  // await plotter.evalGGBScript(["ZoomOut(10)"]);
+  await plotter.exec("setGridVisible", [false]);
+  await plotter.exec("setAxesVisible", [false, false]);
+  await plotter.evalGGBScript(ggbScript, 800, 600);
+  // await plotter.evalGGBScript(["SetAxesRatio(100,100)"], 800, 600);
+  console.log(filename + " plotted");
   var ggb = await plotter.export64("ggb");
   await plotter.release(); 
-  console.log(filename + " plotted");
+  console.log(filename + " plot released");
   fileDescriptor = await fsOpen(filename, 'w');
   var ggbRaw = Buffer.from(ggb, 'base64');
   await fsWrite(fileDescriptor, ggbRaw);
   await fsClose(fileDescriptor);
   console.log(filename + " saved");
-  filesProcessed++;
-  if (!processingTable && filesProcessed == filesToProcess) {
-    process.exit();
-    }
   }
 
 var mysql = require('mysql');
@@ -42,7 +49,16 @@ con.connect(function(err) {
   console.log("Connected to MySQL server");
   // proverId = 4 means that Coq was used (unsupported here)
   var query = "select distinct teoId, code from demonstrations where proverId != 4 order by teoId;";
+  var query = "select distinct teoId, code from demonstrations where proverId != 4 and teoId = 'GEO0240' order by teoId;";
+  var query = "select distinct teoId, code from demonstrations where proverId != 4 order by teoId limit 100;";
+  var query = "select distinct teoId, code from demonstrations where proverId != 4 order by teoId;";
   con.query(query, function (err, result, fields) {
+    processQuery (err, result, fields);
+    }
+  );
+});
+
+async function processQuery (err, result, fields) {
     if (err) throw err;
     var rows = result.length;
     filesToProcess = 0;
@@ -57,12 +73,13 @@ con.connect(function(err) {
         filesToProcess++;
         // console.log("gclcScript: " + gclcScript);
         // console.log("ggbScript: " + ggbScript);
-        GGBScript2GGBFile(filename, ggbScript.split("\n"));
+        await GGBScript2GGBFile(filename, ggbScript.split("\n"));
         }
       }
-    processingTable = false;
-  });
-});
+    pool.release();
+    process.exit();
+  }
+
 
 function nextLabel() {
   lastLabel++;
@@ -126,21 +143,21 @@ function gclc2ggb(program) {
     if (!found) {
       result = line.match( /^\s*onsegment\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) {
-        output += result[1] + "=Point(Segment(" + result[2] + "," + result[3] + "))\n";
+        output += result[1] + "=Point(Segment(" + result[2] + "," + result[3] + ")," + (Math.random()/10+0.6) + ")\n";
         found = true;
         }
       }
     if (!found) {
       result = line.match( /^\s*online\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) {
-        output += result[1] + "=Point(Line(" + result[2] + "," + result[3] + "))\n";
+        output += result[1] + "=Point(Line(" + result[2] + "," + result[3] + ")," + (Math.random()/10+0.6) + ")\n";
         found = true;
         }
       }
     if (!found) {
       result = line.match( /^\s*oncircle\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) {
-        output += result[1] + "=Point(Circle(" + result[2] + "," + result[3] + "))\n";
+        output += result[1] + "=Point(Circle(" + result[2] + "," + result[3] + ")," + (Math.random()/2+0.25) + ")\n";
         found = true;
         }
       }
@@ -162,6 +179,13 @@ function gclc2ggb(program) {
       result = line.match( /^\s*drawcircle\s*([\w]+)\s*([\w]+)\s*$/ );
       if (result != null) {
         output += "Circle(" + result[1] + "," + result[2] + ")\n";
+        found = true;
+        }
+      }
+    if (!found) {
+      result = line.match( /^\s*draw(dash)*line\s*([\w]+)\s*([\w]+)\s*$/ );
+      if (result != null) {
+        output += "Line(" + result[2] + "," + result[3] + ")\n";
         found = true;
         }
       }
@@ -196,35 +220,35 @@ function gclc2ggb(program) {
     if (!found) {
       result = line.match( /^\s*prove\s*{\s*collinear\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*}\s*$/ );
       if (result != null) {
-        output += "Prove(AreCollinear(" + result[1] + "," + result[2] + "," + result[3] + "))\n";
+        output += proveCommand + "(AreCollinear(" + result[1] + "," + result[2] + "," + result[3] + "))\n";
         found = true;
         }
       }
     if (!found) {
       result = line.match( /^\s*prove\s*{\s*perpendicular\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*}\s*$/ );
       if (result != null) {
-        output += "Prove(ArePerpendicular(Line(" + result[1] + "," + result[2] + "),Line(" + result[3] + "," + result[4] + ")))\n";
+        output += proveCommand + "(ArePerpendicular(Line(" + result[1] + "," + result[2] + "),Line(" + result[3] + "," + result[4] + ")))\n";
         found = true;
         }
       }
     if (!found) {
       result = line.match( /^\s*prove\s*{\s*parallel\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*}\s*$/ );
       if (result != null) {
-        output += "Prove(AreParallel(Line(" + result[1] + "," + result[2] + "),Line(" + result[3] + "," + result[4] + ")))\n";
+        output += proveCommand + "(AreParallel(Line(" + result[1] + "," + result[2] + "),Line(" + result[3] + "," + result[4] + ")))\n";
         found = true;
         }
       }
     if (!found) {
       result = line.match( /^\s*prove\s*{\s*cyclic\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*([\w]+)\s*}\s*$/ );
       if (result != null) {
-        output += "Prove(AreConcyclic(" + result[1] + "," + result[2] + "," + result[3] + "," + result[4] + "))\n";
+        output += proveCommand + "(AreConcyclic(" + result[1] + "," + result[2] + "," + result[3] + "," + result[4] + "))\n";
         found = true;
         }
       }
     if (!found) {
       result = line.match( /^\s*prove\s*{\s*identical\s*([\w]+)\s*([\w]+)\s*}\s*$/ );
       if (result != null) {
-        output += "Prove(AreEqual(" + result[1] + "," + result[2] + "))\n";
+        output += proveCommand + "(AreEqual(" + result[1] + "," + result[2] + "))\n";
         found = true;
         }
       }
@@ -244,7 +268,22 @@ function gclc2ggb(program) {
         found = true;
       }
     if (!found) {
+      result = line.match( /^\s*color\s*(\d+\.?\d*|\.\d+)\s*(\d+\.?\d*|\.\d+)\s*(\d+\.?\d*|\.\d+)\s*$/ );
+      if (result != null) // not implemented
+        found = true;
+      }
+    if (!found) {
+      result = line.match( /^\s*area\s*(\d+\.?\d*|\.\d+)\s*(\d+\.?\d*|\.\d+)\s*(\d+\.?\d*|\.\d+)\s*(\d+\.?\d*|\.\d+)\s*$/ );
+      if (result != null) // not implemented
+        found = true;
+      }
+    if (!found) {
       result = line.match( /^\s*prooflimit\s*(\d+\.?\d*|\.\d+)\s*$/ );
+      if (result != null) // not implemented
+        found = true;
+      }
+    if (!found) {
+      result = line.match( /^\s*prooflevel\s*(\d+\.?\d*|\.\d+)\s*$/ );
       if (result != null) // not implemented
         found = true;
       }
