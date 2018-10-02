@@ -1,9 +1,3 @@
-var proveCommand = "Prove";
-var scaling = 30;
-
-var parser = require("./gclc2ggb").parser;
-// console.log(parser.parse("point A 1 2\n point B 3 4\n"));
-
 const GGBPlotter = require("node-geogebra").GGBPlotter;
 
 var fs = require('fs');
@@ -13,6 +7,13 @@ const fsWrite = util.promisify(fs.writeFile);
 const fsClose = util.promisify(fs.close);
 
 var lastLabel = 0;
+var parser = require("./gclc2ggb").parser;
+
+function flatten(arr) {
+  return arr.reduce(function (flat, toFlatten) {
+    return flat.concat(Array.isArray(toFlatten) ? flatten(toFlatten) : toFlatten);
+  }, []);
+}
 
 async function GGBScript2GGBFile(filename, ggbScript) {
   console.log(filename + ": obtaining GGBPlotter");
@@ -63,7 +64,7 @@ async function processQuery (err, result, fields) {
     filesProcessed = 0;
     processingTable = true;
     for (var i = 0; i < rows; i++) {
-      var gclcScript = result[i].code.toString().split("\n");
+      var gclcScript = result[i].code.toString();
       var filename = result[i].teoId + ".ggb";
       var ggbScript = gclc2ggb(gclcScript);
       if (ggbScript != null) {
@@ -71,7 +72,7 @@ async function processQuery (err, result, fields) {
         filesToProcess++;
         // console.log("gclcScript: " + gclcScript);
         // console.log("ggbScript: " + ggbScript);
-        await GGBScript2GGBFile(filename, ggbScript.split("\n"));
+        await GGBScript2GGBFile(filename, ggbScript);
         }
       }
     process.exit();
@@ -84,6 +85,18 @@ function nextLabel() {
   }
 
 function gclc2ggb(program) {
+  try {
+    return flatten(parser.parse(program));
+    }
+  catch (err) {
+    console.log(err);
+    return null;
+    }
+  }
+
+function gclc2ggb_old(program) {
+  var scaling = 30;
+  var proveCommand = "Prove";
   var lines = program.length;
   var output = "";
   for (var i = 0; i < lines; i++) {

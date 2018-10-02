@@ -18,3 +18,6 @@ parallel e A f_AB
 perp f B f_AB
 foot L K f_AB
 med g A B
+prove { 
+ collinear J K L }
+prove { perp A B G H }
