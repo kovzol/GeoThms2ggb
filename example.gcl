@@ -1,4 +1,20 @@
 point A 0 0
-point B 1.2 3.4
-segment f_AB A B
-point C 5 6
+point B 12.3 45.6
+line f_AB A B
+point C 76.5 43.21
+line f_BC B C
+drawdashsegment B C
+intersec D f_AB f_BC
+intersection D1 f_AB f_BC
+circle c1 A B
+circle c2 C D
+intersec2 G H c1 c2
+onsegment I A B
+line l1 G H
+online I G H
+oncircle J A B
+midpoint K I J
+parallel e A f_AB
+perp f B f_AB
+foot L K f_AB
+med g A B

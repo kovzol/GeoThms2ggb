@@ -1,6 +1,9 @@
 var proveCommand = "Prove";
 var scaling = 30;
 
+var parser = require("./gclc2ggb").parser;
+// console.log(parser.parse("point A 1 2\n point B 3 4\n"));
+
 const GGBPlotter = require("node-geogebra").GGBPlotter;
 
 var fs = require('fs');
