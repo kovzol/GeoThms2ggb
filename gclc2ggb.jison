@@ -40,9 +40,13 @@
 "collinear"           return 'collinear';
 "cyclic"              return 'cyclic';
 "identical"           return 'identical';
+"same_length"         return 'same_length';
 "dim"                 return 'dim';
 "prooflimit"          return 'prooflimit';
 "prooflevel"          return 'prooflevel';
+"prover_timeout"      return 'prover_timeout';
+"color"               return 'color';
+"area"                return 'area';
 [0-9]+("."[0-9]+)?\b  return 'NUMBER'
 \w+                   return 'VAR'
 <<EOF>>               return 'EOF'
@@ -77,7 +81,7 @@ stmt
     | onsegment_stmt | online_stmt | oncircle_stmt
     | foot_stmt | parallel_stmt | perp_stmt | med_stmt
     | prove_stmt
-    | dim_stmt | prooflimit_stmt | prooflevel_stmt
+    | dim_stmt | prooflimit_stmt | prooflevel_stmt | prover_timeout_stmt | color_stmt | area_stmt
     ;
 
 point_stmt : point VAR NUMBER NUMBER { $$ = $2 + "=(" + ($3/30) + "," + ($4/30) + ")"; } ;
@@ -101,16 +105,21 @@ foot_stmt: foot VAR VAR VAR { $$ = $2 + "=Intersect(PerpendicularLine(" + $3 + "
 parallel_stmt: parallel VAR VAR VAR { $$ = $2 + "=Line(" + $3 + "," + $4 + ")"; } ;
 perp_stmt: perp VAR VAR VAR { $$ = $2 + "=PerpendicularLine(" + $3 + "," + $4 + ")"; } ;
 med_stmt: med VAR VAR VAR { $$ = $2 + "=PerpendicularBisector(" + $3 + "," + $4 + ")"; } ;
-dim_stmt: dim NUMBER NUMBER ;
-prooflimit_stmt: prooflimit NUMBER ;
-prooflevel_stmt: prooflevel NUMBER ;
+
+dim_stmt: dim NUMBER NUMBER { $$ = ""; } ;
+prooflimit_stmt: prooflimit NUMBER { $$ = ""; } ;
+prooflevel_stmt: prooflevel NUMBER { $$ = ""; }  ;
+prover_timeout_stmt: prover_timeout NUMBER { $$ = ""; } ;
+area_stmt: area NUMBER NUMBER NUMBER NUMBER {  $$ = ""; } ;
+color_stmt: color NUMBER NUMBER NUMBER  { $$ = ""; } ;
 
 prove_stmt: prove LBRACE thesis RBRACE { $$ = "Prove(" + $3 + ")"; } ;
 
-thesis : collinear_check | perp_check | parallel_check | cyclic_check | identical_check;
+thesis : collinear_check | perp_check | parallel_check | cyclic_check | identical_check | same_length_check;
 
 collinear_check : collinear VAR VAR VAR { $$ = "AreCollinear(" + $2 + "," + $3 + "," + $4 + ")"; } ;
 perp_check : perp VAR VAR VAR VAR { $$ = "ArePerpendicular(Line(" + $2 + "," + $3 + "),Line(" + $4 + "," + $5 + "))"; } ;
 parallel_check: parallel VAR VAR VAR VAR { $$ = "AreParallel(Line(" + $2 + "," + $3 + "),Line(" + $4 + "," + $5 + "))"; } ;
 cyclic_check: cyclic VAR VAR VAR VAR { $$ = "AreConcyclic(" + $2 + "," + $3 + "," + $4 + "," + $5 + ")"; } ;
 identical_check: identical VAR VAR { $$ = "AreEqual(" + $2 + "," + $3 + ")"; } ;
+same_length_check: same_length VAR VAR VAR VAR { $$ = "AreCongruent(Segment(" + $2 + "," + $3 + "),Segment(" + $4 + "," + $5 + "))"; } ;
