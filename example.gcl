@@ -1,0 +1,4 @@
+point A 0 0
+point B 1.2 3.4
+segment f_AB A B
+point C 5 6
