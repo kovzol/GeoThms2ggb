@@ -60,7 +60,6 @@ async function processQuery (err, result, fields) {
       var gclcScript = result[i].code.toString();
       var ggbScript = gclc2ggb(gclcScript);
       if (ggbScript != null) {
-        console.log(filename + ": processing...");
         var proveLines = [];
         // Finding possible multiple Prove commands
         current = 0;
@@ -69,7 +68,7 @@ async function processQuery (err, result, fields) {
           if (prove != null) {
             current++;
             var filename = result[i].teoId + "-" + (current) + ".ggb";
-            console.log("---" + filename);
+            console.log(filename + ": processing...");
             proveLines.push(true);
             ggbScriptCurrent = [];
             for (var k = 0; k <= j; k++) {

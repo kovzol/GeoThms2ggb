@@ -45,6 +45,7 @@ mark\w*               return 'mark';
 "rotate"              return 'rotate';
 "translate"           return 'translate';
 "towards"             return 'towards';
+"2"                   return 'TWO';
 "prove"               return 'prove';
 "collinear"           return 'collinear';
 "cyclic"              return 'cyclic';
@@ -125,7 +126,7 @@ med_stmt: med VAR VAR VAR { $$ = $2 + "=PerpendicularBisector(" + $3 + "," + $4 
 bis_stmt: bis VAR VAR VAR VAR { $$ = $2 + "=AngleBisector(" + $3 + "," + $4 + "," + $5 + ")"; } ;
 rotate_stmt: rotate VAR VAR NUMBER VAR { $$ = $2 + "=Rotate(" + $5 + "," + $4 + "°," + $3 + ")"; } ;
 translate_stmt: translate VAR VAR VAR VAR { $$ = $2 + "=Translate(" + $5 + ",Vector(" + $3 + "," + $4 + "))"; } ;
-towards_stmt: towards VAR VAR VAR 2 { $$ = $4 + "=Midpoint(" + $2 + "," + $3 + ")"; } ;
+towards_stmt: towards VAR VAR VAR TWO {  $$ = $2 + "=Midpoint(" + $3 + "," + $4 + ")"; } ;
 
 dim_stmt: dim NUMBER NUMBER { $$ = ""; } ;
 prooflimit_stmt: prooflimit NUMBER { $$ = ""; } ;
@@ -137,7 +138,7 @@ color_stmt: color NUMBER NUMBER NUMBER  { $$ = ""; } ;
 prove_stmt: prove LBRACE thesis RBRACE { $$ = "Prove(" + $3 + ")"; } ;
 
 thesis : collinear_check | perp_check | parallel_check | cyclic_check | identical_check | same_length_check
-       | midpoint_check | equal_check | pbisector_check ;
+       | midpoint_check | equal_check | eqangle_check | pbisector_check ;
 
 collinear_check : collinear VAR VAR VAR { $$ = "AreCollinear(" + $2 + "," + $3 + "," + $4 + ")"; } ;
 perp_check : perp VAR VAR VAR VAR { $$ = "ArePerpendicular(Line(" + $2 + "," + $3 + "),Line(" + $4 + "," + $5 + "))"; } ;
