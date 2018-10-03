@@ -44,6 +44,7 @@ mark\w*               return 'mark';
 "bisector"            return 'bis';
 "rotate"              return 'rotate';
 "translate"           return 'translate';
+"towards"             return 'towards';
 "prove"               return 'prove';
 "collinear"           return 'collinear';
 "cyclic"              return 'cyclic';
@@ -91,7 +92,7 @@ stmt
     | midpoint_stmt
     | onsegment_stmt | online_stmt | oncircle_stmt
     | foot_stmt | parallel_stmt | perp_stmt | med_stmt | bis_stmt
-    | rotate_stmt
+    | rotate_stmt | translate_stmt | towards_stmt
     | prove_stmt
     | dim_stmt | prooflimit_stmt | prooflevel_stmt | prover_timeout_stmt | color_stmt | area_stmt
     ;
@@ -124,6 +125,7 @@ med_stmt: med VAR VAR VAR { $$ = $2 + "=PerpendicularBisector(" + $3 + "," + $4 
 bis_stmt: bis VAR VAR VAR VAR { $$ = $2 + "=AngleBisector(" + $3 + "," + $4 + "," + $5 + ")"; } ;
 rotate_stmt: rotate VAR VAR NUMBER VAR { $$ = $2 + "=Rotate(" + $5 + "," + $4 + "°," + $3 + ")"; } ;
 translate_stmt: translate VAR VAR VAR VAR { $$ = $2 + "=Translate(" + $5 + ",Vector(" + $3 + "," + $4 + "))"; } ;
+towards_stmt: towards VAR VAR VAR 2 { $$ = $4 + "=Midpoint(" + $2 + "," + $3 + ")"; } ;
 
 dim_stmt: dim NUMBER NUMBER { $$ = ""; } ;
 prooflimit_stmt: prooflimit NUMBER { $$ = ""; } ;

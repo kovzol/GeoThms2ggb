@@ -58,13 +58,30 @@ async function processQuery (err, result, fields) {
     var rows = result.length;
     for (var i = 0; i < rows; i++) {
       var gclcScript = result[i].code.toString();
-      var filename = result[i].teoId + ".ggb";
       var ggbScript = gclc2ggb(gclcScript);
       if (ggbScript != null) {
         console.log(filename + ": processing...");
-        // console.log("gclcScript: " + gclcScript);
-        // console.log("ggbScript: " + ggbScript);
-        await GGBScript2GGBFile(filename, ggbScript);
+        var proveLines = [];
+        // Finding possible multiple Prove commands
+        current = 0;
+        for (var j = 0; j < ggbScript.length; j++) {
+          var prove = ggbScript[j].match( /^Prove/ );
+          if (prove != null) {
+            current++;
+            var filename = result[i].teoId + "-" + (current) + ".ggb";
+            console.log("---" + filename);
+            proveLines.push(true);
+            ggbScriptCurrent = [];
+            for (var k = 0; k <= j; k++) {
+              if (!proveLines[k] || k == j) {
+                ggbScriptCurrent.push(ggbScript[k]);
+                }
+              }
+            await GGBScript2GGBFile(filename, ggbScriptCurrent);
+            }
+          else
+            proveLines.push(false);
+          }
         } else {
         var gclcFilename = result[i].teoId + ".gcl";
         console.log(gclcFilename + ": saving");
