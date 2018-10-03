@@ -14,6 +14,9 @@
 \s+                   /* skip whitespace */
 "%".*                 /* ignore comment */
 "point"               return 'point';
+"drawpoint"           return 'drawpoint';
+cmark_\w+             return 'cmark';
+mark_\w+              return 'mark';
 "segment"             return 'segment';
 "drawsegment"         return 'drawsegment';
 "drawdashsegment"     return 'drawdashsegment';
@@ -36,6 +39,10 @@
 "perpendicular"       return 'perp';
 "med"                 return 'med';
 "mediatrice"          return 'med';
+"bis"                 return 'bis';
+"bisector"            return 'bis';
+"rotate"              return 'rotate';
+"translate"           return 'translate';
 "prove"               return 'prove';
 "collinear"           return 'collinear';
 "cyclic"              return 'cyclic';
@@ -72,21 +79,26 @@ proglist
     ;
 
 stmt
-    : point_stmt
+    : point_stmt | drawpoint_stmt | cmark_stmt | mark_stmt
     | line_stmt | drawline_stmt | drawdashline_stmt
     | segment_stmt | drawsegment_stmt | drawdashsegment_stmt
     | circle_stmt | drawcircle_stmt
     | intersec_stmt | intersec2_stmt
     | midpoint_stmt
     | onsegment_stmt | online_stmt | oncircle_stmt
-    | foot_stmt | parallel_stmt | perp_stmt | med_stmt
+    | foot_stmt | parallel_stmt | perp_stmt | med_stmt | bis_stmt
+    | rotate_stmt
     | prove_stmt
     | dim_stmt | prooflimit_stmt | prooflevel_stmt | prover_timeout_stmt | color_stmt | area_stmt
     ;
 
 point_stmt : point VAR NUMBER NUMBER { $$ = $2 + "=(" + ($3/30) + "," + ($4/30) + ")"; } ;
+drawpoint_stmt: drawpoint VAR { $$ = ""; } ;
+cmark_stmt: cmark VAR { $$ = ""; } ;
+mark_stmt: mark VAR { $$ = ""; } ;
 line_stmt: line VAR VAR VAR { $$ = $2 + "=Line(" + $3 + "," + $4 + ")"; } ;
-drawline_stmt : drawline VAR VAR { $$ = "Line(" + $2 + "," + $3 + ")"; } ;
+drawline_stmt : drawline VAR VAR { $$ = "Line(" + $2 + "," + $3 + ")"; } 
+              | drawline VAR { $$ = ""; } ;
 drawdashline_stmt : drawdashline VAR VAR { $$ = "Line(" + $2 + "," + $3 + ")"; } ;
 segment_stmt : segment VAR VAR VAR { $$ = $2 + "=Segment(" + $3 + "," + $4 + ")"; } ;
 drawsegment_stmt : drawsegment VAR VAR { $$ = "Segment(" + $2 + "," + $3 + ")"; } ;
@@ -105,6 +117,9 @@ foot_stmt: foot VAR VAR VAR { $$ = $2 + "=Intersect(PerpendicularLine(" + $3 + "
 parallel_stmt: parallel VAR VAR VAR { $$ = $2 + "=Line(" + $3 + "," + $4 + ")"; } ;
 perp_stmt: perp VAR VAR VAR { $$ = $2 + "=PerpendicularLine(" + $3 + "," + $4 + ")"; } ;
 med_stmt: med VAR VAR VAR { $$ = $2 + "=PerpendicularBisector(" + $3 + "," + $4 + ")"; } ;
+bis_stmt: bis VAR VAR VAR VAR { $$ = $2 + "=AngleBisector(" + $3 + "," + $4 + "," + $5 + ")"; } ;
+rotate_stmt: rotate VAR VAR NUMBER VAR { $$ = $2 + "=Rotate(" + $5 + "," + $4 + "°," + $3 + ")"; } ;
+translate_stmt: translate VAR VAR VAR VAR { $$ = $2 + "=Translate(" + $5 + ",Vector(" + $3 + "," + $4 + "))"; } ;
 
 dim_stmt: dim NUMBER NUMBER { $$ = ""; } ;
 prooflimit_stmt: prooflimit NUMBER { $$ = ""; } ;
@@ -115,7 +130,8 @@ color_stmt: color NUMBER NUMBER NUMBER  { $$ = ""; } ;
 
 prove_stmt: prove LBRACE thesis RBRACE { $$ = "Prove(" + $3 + ")"; } ;
 
-thesis : collinear_check | perp_check | parallel_check | cyclic_check | identical_check | same_length_check;
+thesis : collinear_check | perp_check | parallel_check | cyclic_check | identical_check | same_length_check
+       | midpoint_check;
 
 collinear_check : collinear VAR VAR VAR { $$ = "AreCollinear(" + $2 + "," + $3 + "," + $4 + ")"; } ;
 perp_check : perp VAR VAR VAR VAR { $$ = "ArePerpendicular(Line(" + $2 + "," + $3 + "),Line(" + $4 + "," + $5 + "))"; } ;
@@ -123,3 +139,4 @@ parallel_check: parallel VAR VAR VAR VAR { $$ = "AreParallel(Line(" + $2 + "," +
 cyclic_check: cyclic VAR VAR VAR VAR { $$ = "AreConcyclic(" + $2 + "," + $3 + "," + $4 + "," + $5 + ")"; } ;
 identical_check: identical VAR VAR { $$ = "AreEqual(" + $2 + "," + $3 + ")"; } ;
 same_length_check: same_length VAR VAR VAR VAR { $$ = "AreCongruent(Segment(" + $2 + "," + $3 + "),Segment(" + $4 + "," + $5 + "))"; } ;
+midpoint_check: midpoint VAR VAR VAR { $$ = "AreEqual(" + $2 + ",Midpoint(" + $3 + "," + $4 + "))"; } ;
