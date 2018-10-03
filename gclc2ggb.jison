@@ -51,6 +51,7 @@ mark\w*               return 'mark';
 "equal"               return 'equal';
 "eqangle"             return 'eqangle';
 "same_length"         return 'same_length';
+"pbisector"           return 'pbisector';
 "dim"                 return 'dim';
 "prooflimit"          return 'prooflimit';
 "prooflevel"          return 'prooflevel';
@@ -134,7 +135,7 @@ color_stmt: color NUMBER NUMBER NUMBER  { $$ = ""; } ;
 prove_stmt: prove LBRACE thesis RBRACE { $$ = "Prove(" + $3 + ")"; } ;
 
 thesis : collinear_check | perp_check | parallel_check | cyclic_check | identical_check | same_length_check
-       | midpoint_check | equal_check;
+       | midpoint_check | equal_check | pbisector_check ;
 
 collinear_check : collinear VAR VAR VAR { $$ = "AreCollinear(" + $2 + "," + $3 + "," + $4 + ")"; } ;
 perp_check : perp VAR VAR VAR VAR { $$ = "ArePerpendicular(Line(" + $2 + "," + $3 + "),Line(" + $4 + "," + $5 + "))"; } ;
@@ -144,6 +145,7 @@ identical_check: identical VAR VAR { $$ = "AreEqual(" + $2 + "," + $3 + ")"; } ;
 same_length_check: same_length VAR VAR VAR VAR { $$ = "AreCongruent(Segment(" + $2 + "," + $3 + "),Segment(" + $4 + "," + $5 + "))"; } ;
 midpoint_check: midpoint VAR VAR VAR { $$ = "AreEqual(" + $2 + ",Midpoint(" + $3 + "," + $4 + "))"; } ;
 eqangle_check: eqangle VAR VAR VAR VAR VAR VAR { $$ = "AreCongruent(Angle(" + $2 + "," + $3 + "," + $4 + "),Angle(" + $5 + "," + $6 + "," + $7 + "))"; } ;
+pbisector_check: pbisector VAR VAR VAR { $$ = $2 + "∈PerpendicularBisector(" + $3 + "," + $4 + ")"; } ;
 
 equal_check: equal LBRACE expr RBRACE LBRACE expr RBRACE { $$ = "AreCongruent(" + $3 + "," + $6 + ")"; } ;
 
