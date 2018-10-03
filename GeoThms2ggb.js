@@ -16,9 +16,7 @@ function flatten(arr) {
 }
 
 async function GGBScript2GGBFile(filename, ggbScript) {
-  console.log(filename + ": obtaining GGBPlotter");
   var plotter = new GGBPlotter({ggb: "remote", plotters: 1});
-  console.log(filename + ": GGBPlotter obtained");
   await plotter.evalGGBScript(['SetPerspective("AG")']);
   // await plotter.evalGGBScript(["ZoomIn(-20,0,160,120)"]);
   // await plotter.evalGGBScript(["ZoomOut(30)"]);
@@ -26,15 +24,13 @@ async function GGBScript2GGBFile(filename, ggbScript) {
   await plotter.exec("setAxesVisible", [false, false]);
   await plotter.evalGGBScript(ggbScript, 800, 600);
   // await plotter.evalGGBScript(["SetAxesRatio(100,100)"], 800, 600);
-  console.log(filename + ": GGB script evaluated");
   var ggb = await plotter.export64("ggb");
   await plotter.release(); 
-  console.log(filename + ": GGBPlotter released");
   var fileDescriptor = await fsOpen(filename, 'w');
   var ggbRaw = Buffer.from(ggb, 'base64');
   await fsWrite(fileDescriptor, ggbRaw);
   await fsClose(fileDescriptor);
-  console.log(filename + ": file saved");
+  console.log(filename + ": finished");
   }
 
 var mysql = require('mysql');
@@ -65,12 +61,13 @@ async function processQuery (err, result, fields) {
       var filename = result[i].teoId + ".ggb";
       var ggbScript = gclc2ggb(gclcScript);
       if (ggbScript != null) {
-        console.log(filename + " is to be processed");
+        console.log(filename + ": processing...");
         // console.log("gclcScript: " + gclcScript);
         // console.log("ggbScript: " + ggbScript);
         await GGBScript2GGBFile(filename, ggbScript);
         } else {
         var gclcFilename = result[i].teoId + ".gcl";
+        console.log(gclcFilename + ": saving");
         var fileDescriptor = await fsOpen(gclcFilename, 'w');
         await fsWrite(fileDescriptor, gclcScript);
         await fsClose(fileDescriptor);

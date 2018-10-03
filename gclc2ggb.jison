@@ -15,9 +15,10 @@
 "%".*                 /* ignore comment */
 "point"               return 'point';
 "drawpoint"           return 'drawpoint';
-cmark_\w+             return 'cmark';
-mark_\w+              return 'mark';
+cmark\w*              return 'cmark';
+mark\w*               return 'mark';
 "segment"             return 'segment';
+"angle"               return 'angle';
 "drawsegment"         return 'drawsegment';
 "drawdashsegment"     return 'drawdashsegment';
 "line"                return 'line';
@@ -47,6 +48,8 @@ mark_\w+              return 'mark';
 "collinear"           return 'collinear';
 "cyclic"              return 'cyclic';
 "identical"           return 'identical';
+"equal"               return 'equal';
+"eqangle"             return 'eqangle';
 "same_length"         return 'same_length';
 "dim"                 return 'dim';
 "prooflimit"          return 'prooflimit';
@@ -100,11 +103,11 @@ line_stmt: line VAR VAR VAR { $$ = $2 + "=Line(" + $3 + "," + $4 + ")"; } ;
 drawline_stmt : drawline VAR VAR { $$ = "Line(" + $2 + "," + $3 + ")"; } 
               | drawline VAR { $$ = ""; } ;
 drawdashline_stmt : drawdashline VAR VAR { $$ = "Line(" + $2 + "," + $3 + ")"; } ;
-segment_stmt : segment VAR VAR VAR { $$ = $2 + "=Segment(" + $3 + "," + $4 + ")"; } ;
 drawsegment_stmt : drawsegment VAR VAR { $$ = "Segment(" + $2 + "," + $3 + ")"; } ;
 drawdashsegment_stmt : drawdashsegment VAR VAR { $$ = "Segment(" + $2 + "," + $3 + ")"; } ;
 circle_stmt: circle VAR VAR VAR { $$ = $2 + "=Circle(" + $3 + "," + $4 + ")"; } ;
-drawcircle_stmt: drawcircle VAR VAR { $$ = "Circle(" + $2 + "," + $3 + ")"; } ;
+drawcircle_stmt: drawcircle VAR VAR { $$ = "Circle(" + $2 + "," + $3 + ")"; } 
+               | drawcircle VAR { $$ = ""; } ;
 intersec_stmt: intersec VAR VAR VAR { $$ = $2 + "=Intersect(" + $3 + "," + $4 + ")"; } ;
 intersec2_stmt: intersec2 VAR VAR VAR VAR { $$ = [
     $2 + "=Intersect(" + $4 + "," + $5 + ",1)",
@@ -131,7 +134,7 @@ color_stmt: color NUMBER NUMBER NUMBER  { $$ = ""; } ;
 prove_stmt: prove LBRACE thesis RBRACE { $$ = "Prove(" + $3 + ")"; } ;
 
 thesis : collinear_check | perp_check | parallel_check | cyclic_check | identical_check | same_length_check
-       | midpoint_check;
+       | midpoint_check | equal_check;
 
 collinear_check : collinear VAR VAR VAR { $$ = "AreCollinear(" + $2 + "," + $3 + "," + $4 + ")"; } ;
 perp_check : perp VAR VAR VAR VAR { $$ = "ArePerpendicular(Line(" + $2 + "," + $3 + "),Line(" + $4 + "," + $5 + "))"; } ;
@@ -140,3 +143,13 @@ cyclic_check: cyclic VAR VAR VAR VAR { $$ = "AreConcyclic(" + $2 + "," + $3 + ",
 identical_check: identical VAR VAR { $$ = "AreEqual(" + $2 + "," + $3 + ")"; } ;
 same_length_check: same_length VAR VAR VAR VAR { $$ = "AreCongruent(Segment(" + $2 + "," + $3 + "),Segment(" + $4 + "," + $5 + "))"; } ;
 midpoint_check: midpoint VAR VAR VAR { $$ = "AreEqual(" + $2 + ",Midpoint(" + $3 + "," + $4 + "))"; } ;
+eqangle_check: eqangle VAR VAR VAR VAR VAR VAR { $$ = "AreCongruent(Angle(" + $2 + "," + $3 + "," + $4 + "),Angle(" + $5 + "," + $6 + "," + $7 + "))"; } ;
+
+equal_check: equal LBRACE expr RBRACE LBRACE expr RBRACE { $$ = "AreCongruent(" + $3 + "," + $6 + ")"; } ;
+
+expr : segment_expr | angle_expr;
+
+segment_expr : segment VAR VAR { $$ = "Segment(" + $2 + "," + $3 + ")"; } ;
+angle_expr: angle VAR VAR VAR { $$ = "Angle(" + $2 + "," + $3 + "," + $4 + ")"; } 
+          | angle VAR VAR VAR VAR { $$ = "Angle(Line(" + $2 + "," + $3 + "),Line(" + $4 + "," + $5 + "))"; } ;
+
